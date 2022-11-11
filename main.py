@@ -5,16 +5,20 @@ bot = Bot(token=API.TOKEN)
 dp = Dispatcher(bot)
 
 
-@dp.message_handler(filters.CommandStart())
+@dp.message_handler(commands=['start'])
 async def send_welcome(message: types.Message):
-    alt, src, title, next_strip = get_last_strip()
-    await types.ChatActions.upload_photo()
-    media = types.MediaGroup()
-    media.attach_photo(src, title)
-    await message.answer_media_group(media=media)
-    await message.answer(next_strip)
-    if next_strip:
-        pass
+    src, title = get_last_strip()
+    for page in range(len(src)):
+        await types.ChatActions.upload_photo()
+        media = types.MediaGroup()
+        media.attach_photo(src[page], title[page])
+        await message.answer_media_group(media=media)
+
+
+@dp.message_handler(commands=['update'])
+async def check_update(message: types.Message):
+    title = update()
+    await message.answer(title)
 
 
 if __name__ == '__main__':
