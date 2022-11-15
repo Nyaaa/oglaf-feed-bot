@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "oglaf-feed-bot"
-version = "0.1.0"
+version = "0.2.0"
 description = ""
 authors = ["Nyaaa <1457047+Nyaaa@users.noreply.github.com>"]
 readme = "README.md"
