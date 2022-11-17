@@ -1,4 +1,4 @@
-from aiogram import Bot, Dispatcher, executor, types
+from aiogram import Bot, Dispatcher, executor, types, exceptions
 import aioschedule
 import asyncio
 import logging
@@ -11,25 +11,25 @@ log = logging.getLogger('broadcast')
 
 
 @dp.message_handler(commands=['start'])
-async def hello(message: types.Message):
+async def begin(message: types.Message):
     user_id = message.from_user.id
-    text = f"ID {user_id} subscribed"
+    text = f"ID {user_id}: subscribed"
     try:
         Users.add(user_id)
     except sqlite3.IntegrityError:
-        text = f"ID {user_id} is already subscribed"
+        text = f"ID {user_id}: you are already subscribed"
     finally:
         await bot.send_message(user_id, text + "\n/stop to unsubscribe")
 
 
 @dp.message_handler(commands=['stop'])
-async def hello(message: types.Message):
+async def stop(message: types.Message):
     user_id = message.from_user.id
-    text = f"ID {user_id} unsubscribed"
+    text = f"ID {user_id}: unsubscribed"
     try:
         Users.delete(user_id)
     except BotException:
-        text = f"ID {user_id} is not subscribed"
+        text = f"ID {user_id}: you are not subscribed"
     finally:
         await bot.send_message(user_id, text)
 
@@ -58,11 +58,21 @@ async def get_strip():
 
 async def comic(user_id, name, media):
     """Forms & sends a message"""
-    await bot.send_chat_action(user_id, 'upload_photo')
-    await bot.send_message(user_id, name)
-    await bot.send_media_group(user_id, media=media)
-    log.info(f"Message sent to {user_id}")
-    return True
+    try:
+        await bot.send_chat_action(user_id, 'upload_photo')
+        await bot.send_message(user_id, name)
+        await bot.send_media_group(user_id, media=media)
+    except exceptions.Unauthorized or exceptions.ChatNotFound:
+        Users.delete(user_id)
+        log.info(f"ID {user_id}: User removed")
+    except exceptions.RetryAfter as e:
+        log.error(f"ID {user_id}: Timeout {e.timeout} seconds")
+        await asyncio.sleep(e.timeout)
+        return await comic(user_id, name, media)
+    else:
+        log.info(f"ID {user_id}: Message sent")
+        return True
+    return False
 
 
 async def broadcast(name, media):
