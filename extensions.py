@@ -1,8 +1,15 @@
-import dotenv
 import requests
 import os
 from dotenv import load_dotenv, find_dotenv
 from bs4 import BeautifulSoup
+import sqlite3
+
+con = sqlite3.connect("bot.db")
+cur = con.cursor()
+# cur.execute("DROP TABLE conf;")
+cur.execute("CREATE TABLE IF NOT EXISTS conf(setting TEXT NOT NULL PRIMARY KEY, value TEXT)")
+cur.execute("CREATE TABLE IF NOT EXISTS users(user_id INTEGER NOT NULL PRIMARY KEY)")
+cur.execute("INSERT OR IGNORE INTO conf(setting, value) VALUES('last_page', NULL)")
 
 
 class API:
@@ -11,18 +18,44 @@ class API:
     TOKEN = os.getenv('BOT_TOKEN')
 
 
-class FetchException(Exception):
+class BotException(Exception):
     pass
+
+
+class Users:
+    @staticmethod
+    def add(user_id):
+        try:
+            cur.execute("INSERT INTO users(user_id) VALUES(?)", (user_id, ))
+        except sqlite3.IntegrityError:
+            raise
+        else:
+            con.commit()
+
+    @staticmethod
+    def delete(user_id):
+        cur.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
+        if cur.rowcount <= 0:
+            raise BotException("User not found")
+        else:
+            con.commit()
+
+    @staticmethod
+    def get_users():
+        search = cur.execute("SELECT user_id FROM users")
+        return search.fetchall()
 
 
 def get_last_strip():
     base = 'https://www.oglaf.com'
     page = update()
-    last_page = dotenv.get_key(find_dotenv(), key_to_get='last_page')
+    res = cur.execute("SELECT value FROM conf WHERE setting='last_page'")
+    last_page = res.fetchone()[0]
     if page == last_page:
-        raise FetchException('No updates')
+        raise BotException('No updates')
     else:
-        dotenv.set_key(find_dotenv(), key_to_set='last_page', value_to_set=page)
+        cur.execute("UPDATE conf SET value = ? WHERE setting = 'last_page'", (page, ))
+        con.commit()
     url = base + page
     counter = 1
     src = []
@@ -55,4 +88,5 @@ def update():
 
 
 def force_update():
-    dotenv.set_key(find_dotenv(), key_to_set='last_page', value_to_set='')
+    cur.execute("UPDATE conf SET value = NULL WHERE setting = 'last_page'")
+    con.commit()

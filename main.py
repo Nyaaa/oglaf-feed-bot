@@ -8,34 +8,36 @@ bot = Bot(token=API.TOKEN)
 dp = Dispatcher(bot)
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('broadcast')
-users = []
 
 
 @dp.message_handler(commands=['start'])
 async def hello(message: types.Message):
     user_id = message.from_user.id
-    if user_id not in users:
-        users.append(user_id)
-        text = f"ID {user_id} subscribed"
-    else:
+    text = f"ID {user_id} subscribed"
+    try:
+        Users.add(user_id)
+    except sqlite3.IntegrityError:
         text = f"ID {user_id} is already subscribed"
-    await bot.send_message(user_id, text+"\n/stop to unsubscribe")
+    finally:
+        await bot.send_message(user_id, text + "\n/stop to unsubscribe")
 
 
 @dp.message_handler(commands=['stop'])
 async def hello(message: types.Message):
     user_id = message.from_user.id
-    if user_id in users:
-        users.remove(user_id)
-        text = f"ID {user_id} unsubscribed"
-    else:
+    text = f"ID {user_id} unsubscribed"
+    try:
+        Users.delete(user_id)
+    except BotException:
         text = f"ID {user_id} is not subscribed"
-    await bot.send_message(user_id, text)
+    finally:
+        await bot.send_message(user_id, text)
 
 
 @dp.message_handler(commands=['update'])
 async def update(message: types.Message):
     force_update()
+    await message.answer("Last comic record reset")
 
 
 async def get_strip():
@@ -43,10 +45,10 @@ async def get_strip():
     try:
         log.info("Parsing...")
         src, text, alt, name = get_last_strip()
-    except FetchException as err:
+    except BotException as err:
         log.info(err)
     else:
-        log.info(f"Got new comic {name}")
+        log.info(f'Got new comic "{name}"')
         media = types.MediaGroup()
         for page in range(len(src)):
             description = f'"{alt[page]}"\n{text[page]}'
@@ -54,13 +56,8 @@ async def get_strip():
         await broadcast(name, media)
 
 
-def get_users():
-    yield from users
-
-
 async def comic(user_id, name, media):
     """Forms & sends a message"""
-    # await types.ChatActions.upload_photo()
     await bot.send_chat_action(user_id, 'upload_photo')
     await bot.send_message(user_id, name)
     await bot.send_media_group(user_id, media=media)
@@ -72,7 +69,8 @@ async def broadcast(name, media):
     """Sends a comic to subscribers"""
     count = 0
     try:
-        for user_id in get_users():
+        for user_id in Users.get_users():
+            user_id = user_id[0]
             if await comic(user_id, name, media):
                 count += 1
             await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)
@@ -82,8 +80,8 @@ async def broadcast(name, media):
 
 
 async def scheduler():
-    # aioschedule.every().day.at("12:00").do(broadcast)
-    aioschedule.every(1).minutes.do(get_strip)
+    # aioschedule.every().sunday.at("12:00").do(broadcast)
+    aioschedule.every(1).minutes.do(get_strip)  # TODO change polling interval
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
