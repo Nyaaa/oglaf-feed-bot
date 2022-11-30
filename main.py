@@ -16,7 +16,7 @@ async def begin(message: types.Message):
     user_id = message.from_user.id
     text = f"ID {user_id}: subscribed"
     try:
-        Users.add(user_id)
+        users.add(user_id)
     except sqlite3.IntegrityError:
         text = f"ID {user_id}: you are already subscribed"
     finally:
@@ -29,7 +29,7 @@ async def stop(message: types.Message):
     user_id = message.from_user.id
     text = f"ID {user_id}: unsubscribed"
     try:
-        Users.delete(user_id)
+        users.delete(user_id)
     except BotException:
         text = f"ID {user_id}: you are not subscribed"
     finally:
@@ -47,7 +47,7 @@ async def get_strip():
     """Checks if there is a new comic"""
     try:
         log.info("Parsing...")
-        src, text, alt, name = get_last_strip()
+        src, text, alt, name = Comic().get_last_strip()
     except BotException as err:
         log.info(err)
     else:
@@ -93,8 +93,8 @@ async def broadcast(name, media):
 
 
 async def scheduler():
-    aioschedule.every().sunday.at("12:00").do(broadcast)
-    # aioschedule.every(1).minutes.do(get_strip)
+    # aioschedule.every().sunday.at("12:00").do(broadcast)
+    aioschedule.every(1).minutes.do(get_strip)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)
@@ -105,4 +105,5 @@ async def on_startup(_):
 
 
 if __name__ == '__main__':
+    users = Users()
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
