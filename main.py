@@ -2,9 +2,10 @@ from aiogram import Bot, Dispatcher, executor, types, exceptions
 import aioschedule
 import asyncio
 import logging
+import os
 from extensions import *
 
-bot = Bot(token=API.TOKEN)
+bot = Bot(token=os.getenv('BOT_TOKEN'))
 dp = Dispatcher(bot)
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('broadcast')
@@ -20,6 +21,7 @@ async def begin(message: types.Message):
         text = f"ID {user_id}: you are already subscribed"
     finally:
         await bot.send_message(user_id, text + "\n/stop to unsubscribe")
+        log.info(f"ID {user_id}: User subscribed")
 
 
 @dp.message_handler(commands=['stop'])
@@ -32,12 +34,13 @@ async def stop(message: types.Message):
         text = f"ID {user_id}: you are not subscribed"
     finally:
         await bot.send_message(user_id, text)
+        log.info(f"ID {user_id}: User unsubscribed")
 
 
-@dp.message_handler(commands=['update'])
-async def update(message: types.Message):
-    force_update()
-    await message.answer("Last comic record reset")
+# @dp.message_handler(commands=['update'])
+# async def update(message: types.Message):
+#     force_update()
+#     await message.answer("Last comic record reset")
 
 
 async def get_strip():
@@ -90,8 +93,8 @@ async def broadcast(name, media):
 
 
 async def scheduler():
-    # aioschedule.every().sunday.at("12:00").do(broadcast)
-    aioschedule.every(1).minutes.do(get_strip)  # TODO change polling interval
+    aioschedule.every().sunday.at("12:00").do(broadcast)
+    # aioschedule.every(1).minutes.do(get_strip)
     while True:
         await aioschedule.run_pending()
         await asyncio.sleep(1)

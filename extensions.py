@@ -1,21 +1,12 @@
 import requests
-import os
-from dotenv import load_dotenv, find_dotenv
 from bs4 import BeautifulSoup
 import sqlite3
 
-con = sqlite3.connect("bot.db")
+con = sqlite3.connect("db/db.sqlite3")
 cur = con.cursor()
-# cur.execute("DROP TABLE conf;")
 cur.execute("CREATE TABLE IF NOT EXISTS conf(setting TEXT NOT NULL PRIMARY KEY, value TEXT)")
 cur.execute("CREATE TABLE IF NOT EXISTS users(user_id INTEGER NOT NULL PRIMARY KEY)")
 cur.execute("INSERT OR IGNORE INTO conf(setting, value) VALUES('last_page', NULL)")
-
-
-class API:
-    """Gets telegram token from .env"""
-    load_dotenv(find_dotenv())
-    TOKEN = os.getenv('BOT_TOKEN')
 
 
 class BotException(Exception):
