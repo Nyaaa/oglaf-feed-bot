@@ -1,4 +1,4 @@
-FROM python:3.10-slim
+FROM python:3.10-alpine
 RUN mkdir /app
 WORKDIR /app
 RUN pip install poetry && poetry config virtualenvs.create false

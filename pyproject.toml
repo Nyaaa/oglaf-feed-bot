@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "oglaf-feed-bot"
-version = "0.5.0"
+version = "0.6.0"
 description = "Telegram bot for broadcasting oglaf comic strips"
 authors = ["Nyaaa <1457047+Nyaaa@users.noreply.github.com>"]
 readme = "README.md"
