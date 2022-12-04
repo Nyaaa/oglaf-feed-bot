@@ -18,7 +18,7 @@ async def begin(message: types.Message):
     try:
         Users.add(user_id)
     except BotException as e:
-        text = e
+        text = str(e)
     finally:
         log.info(text)
         await bot.send_message(user_id, text + "\n/stop to unsubscribe")
@@ -31,7 +31,7 @@ async def stop(message: types.Message):
     try:
         Users.delete(user_id)
     except BotException as e:
-        text = e
+        text = str(e)
     finally:
         log.info(text)
         await bot.send_message(user_id, text)

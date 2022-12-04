@@ -69,7 +69,7 @@ def get_last_strip():
         except requests.exceptions.RequestException:
             return src, title, alt, name
         else:
-            soup = BeautifulSoup(r.content, 'lxml')
+            soup = BeautifulSoup(r.content, 'html5lib')
             strip = soup.find('img', {'id': 'strip'})
             name = soup.find('title').string
             src.append(strip.attrs['src'])
@@ -82,7 +82,7 @@ def get_last_strip():
 def update():
     base = 'https://www.oglaf.com/archive/'
     r = requests.get(base)
-    soup = BeautifulSoup(r.content, 'lxml')
+    soup = BeautifulSoup(r.content, 'html5lib')
     name = soup.find_all('div')[2].find('a')
     return name['href']
 

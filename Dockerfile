@@ -4,5 +4,5 @@ RUN mkdir /app
 WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 RUN pip install -r requirements.txt --no-cache-dir
-COPY . ./
+COPY extensions.py main.py ./
 CMD ["python","-u","./main.py"]
