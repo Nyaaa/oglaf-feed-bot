@@ -37,12 +37,6 @@ async def stop(message: types.Message):
         log.info(f"ID {user_id}: User unsubscribed")
 
 
-# @dp.message_handler(commands=['update'])
-# async def update(message: types.Message):
-#     force_update()
-#     await message.answer("Last comic record reset")
-
-
 async def get_strip():
     """Checks if there is a new comic"""
     try:
@@ -65,7 +59,7 @@ async def comic(user_id, name, media):
         await bot.send_chat_action(user_id, 'upload_photo')
         await bot.send_message(user_id, name)
         await bot.send_media_group(user_id, media=media)
-    except exceptions.Unauthorized or exceptions.ChatNotFound:
+    except (exceptions.Unauthorized, exceptions.ChatNotFound):
         Users.delete(user_id)
         log.info(f"ID {user_id}: User removed")
     except exceptions.RetryAfter as e:
@@ -93,7 +87,7 @@ async def broadcast(name, media):
 
 
 async def scheduler():
-    aioschedule.every().sunday.at("12:00").do(broadcast)
+    aioschedule.every().sunday.at("12:00").do(get_strip)
     # aioschedule.every(1).minutes.do(get_strip)
     while True:
         await aioschedule.run_pending()
