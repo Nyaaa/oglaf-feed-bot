@@ -17,11 +17,11 @@ async def begin(message: types.Message):
     text = f"ID {user_id}: subscribed"
     try:
         Users.add(user_id)
-    except BotException:
-        text = f"ID {user_id}: you are already subscribed"
+    except BotException as e:
+        text = e
     finally:
+        log.info(text)
         await bot.send_message(user_id, text + "\n/stop to unsubscribe")
-        log.info(f"ID {user_id}: User subscribed")
 
 
 @dp.message_handler(commands=['stop'])
@@ -30,11 +30,11 @@ async def stop(message: types.Message):
     text = f"ID {user_id}: unsubscribed"
     try:
         Users.delete(user_id)
-    except BotException:
-        text = f"ID {user_id}: you are not subscribed"
+    except BotException as e:
+        text = e
     finally:
+        log.info(text)
         await bot.send_message(user_id, text)
-        log.info(f"ID {user_id}: User unsubscribed")
 
 
 async def get_strip():
@@ -87,7 +87,7 @@ async def broadcast(name, media):
 
 
 async def scheduler():
-    aioschedule.every().sunday.at("12:00").do(get_strip)
+    aioschedule.every().sunday.at("20:00").do(get_strip)
     # aioschedule.every(1).minutes.do(get_strip)
     while True:
         await aioschedule.run_pending()
@@ -99,5 +99,6 @@ async def on_startup(_):
 
 
 if __name__ == '__main__':
+    os.path.isdir('db') or os.makedirs('db')
     create_db()
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)

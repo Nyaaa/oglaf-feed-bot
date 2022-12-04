@@ -28,14 +28,14 @@ class Users:
             try:
                 cur.execute("INSERT INTO users(user_id) VALUES(?)", (user_id, ))
             except sqlite3.IntegrityError:
-                raise BotException("User exists")
+                raise BotException(f"ID {user_id}: you are already subscribed")
 
     @staticmethod
     def delete(user_id):
         with DBopen() as cur:
             cur.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
             if cur.rowcount <= 0:
-                raise BotException("User not found")
+                raise BotException(f"ID {user_id}: you are not subscribed")
 
     @staticmethod
     def get_users():

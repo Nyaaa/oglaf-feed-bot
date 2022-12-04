@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "oglaf-feed-bot"
-version = "0.6.0"
+version = "0.6.1"
 description = "Telegram bot for broadcasting oglaf comic strips"
 authors = ["Nyaaa <1457047+Nyaaa@users.noreply.github.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "^3.9"
 aiogram = "^2.23.1"
 requests = "^2.28.1"
 beautifulsoup4 = "^4.11.1"

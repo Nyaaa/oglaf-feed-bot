@@ -1,8 +1,8 @@
-FROM python:3.10-alpine
+FROM python:3.9-alpine
+COPY pip.conf /etc/pip.conf
 RUN mkdir /app
 WORKDIR /app
-RUN pip install poetry && poetry config virtualenvs.create false
-COPY poetry.lock pyproject.toml /app/
-RUN poetry install -n --no-root --only main --no-cache
+COPY requirements.txt /app/requirements.txt
+RUN pip install -r requirements.txt --no-cache-dir
 COPY . ./
 CMD ["python","-u","./main.py"]
