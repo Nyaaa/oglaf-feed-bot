@@ -3,7 +3,7 @@ import aioschedule
 import asyncio
 import logging
 import os
-from extensions import Users, get_last_strip, BotException, create_db
+from extensions import Users, get_comic, BotException, create_db
 
 bot = Bot(token=os.getenv('BOT_TOKEN'))
 dp = Dispatcher(bot)
@@ -16,7 +16,7 @@ async def begin(message: types.Message):
     user_id = message.from_user.id
     text = f"ID {user_id}: subscribed"
     try:
-        Users.add(user_id)
+        Users(user_id).add()
     except BotException as e:
         text = str(e)
     finally:
@@ -29,7 +29,7 @@ async def stop(message: types.Message):
     user_id = message.from_user.id
     text = f"ID {user_id}: unsubscribed"
     try:
-        Users.delete(user_id)
+        Users(user_id).delete()
     except BotException as e:
         text = str(e)
     finally:
@@ -41,7 +41,7 @@ async def get_strip():
     """Checks if there is a new comic"""
     try:
         log.info("Parsing...")
-        src, text, alt, name = get_last_strip()
+        src, text, alt, name = get_comic()
     except BotException as err:
         log.info(err)
     else:
@@ -60,7 +60,7 @@ async def comic(user_id, name, media):
         await bot.send_message(user_id, name)
         await bot.send_media_group(user_id, media=media)
     except (exceptions.Unauthorized, exceptions.ChatNotFound):
-        Users.delete(user_id)
+        Users(user_id).delete()
         log.info(f"ID {user_id}: User removed")
     except exceptions.RetryAfter as e:
         log.error(f"ID {user_id}: Timeout {e.timeout} seconds")

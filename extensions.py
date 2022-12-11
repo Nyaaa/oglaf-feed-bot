@@ -22,20 +22,21 @@ class BotException(Exception):
 
 
 class Users:
-    @staticmethod
-    def add(user_id):
+    def __init__(self, user_id):
+        self.id = user_id
+
+    def add(self):
         with DBopen() as cur:
             try:
-                cur.execute("INSERT INTO users(user_id) VALUES(?)", (user_id, ))
+                cur.execute("INSERT INTO users(user_id) VALUES(?)", (self.id, ))
             except sqlite3.IntegrityError:
-                raise BotException(f"ID {user_id}: you are already subscribed")
+                raise BotException(f"ID {self.id}: you are already subscribed")
 
-    @staticmethod
-    def delete(user_id):
+    def delete(self):
         with DBopen() as cur:
-            cur.execute("DELETE FROM users WHERE user_id = ?", (user_id,))
+            cur.execute("DELETE FROM users WHERE user_id = ?", (self.id, ))
             if cur.rowcount <= 0:
-                raise BotException(f"ID {user_id}: you are not subscribed")
+                raise BotException(f"ID {self.id}: you are not subscribed")
 
     @staticmethod
     def get_users():
@@ -44,18 +45,22 @@ class Users:
             return search.fetchall()
 
 
-def get_last_strip():
-    base = 'https://www.oglaf.com'
+def get_comic():
     page = update()
 
     with DBopen() as cur:
-        res = cur.execute("SELECT value FROM conf WHERE setting='last_page'")
+        res = cur.execute("SELECT value FROM conf")
         last_page = res.fetchone()[0]
         if page == last_page:
             raise BotException('No updates')
         else:
             cur.execute("UPDATE conf SET value = ? WHERE setting = 'last_page'", (page, ))
+            src, title, alt, name = download(page)
+            return src, title, alt, name
 
+
+def download(page):
+    base = 'https://www.oglaf.com'
     url = base + page
     counter = 1
     src = []
@@ -69,7 +74,7 @@ def get_last_strip():
         except requests.exceptions.RequestException:
             return src, title, alt, name
         else:
-            soup = BeautifulSoup(r.content, 'html5lib')
+            soup = BeautifulSoup(r.content, 'html.parser')
             strip = soup.find('img', {'id': 'strip'})
             name = soup.find('title').string
             src.append(strip.attrs['src'])
@@ -82,14 +87,9 @@ def get_last_strip():
 def update():
     base = 'https://www.oglaf.com/archive/'
     r = requests.get(base)
-    soup = BeautifulSoup(r.content, 'html5lib')
+    soup = BeautifulSoup(r.content, 'html.parser')
     name = soup.find_all('div')[2].find('a')
     return name['href']
-
-
-def force_update():
-    with DBopen() as cur:
-        cur.execute("UPDATE conf SET value = NULL WHERE setting = 'last_page'")
 
 
 def create_db():
