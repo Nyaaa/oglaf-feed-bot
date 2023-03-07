@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 load_dotenv(find_dotenv())
 scheduler = AsyncIOScheduler()
 bot = Bot(token=os.getenv('BOT_TOKEN'))
+ADMIN = int(os.getenv('ADMIN'))
 dp = Dispatcher(bot)
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger('broadcast')
@@ -42,16 +43,27 @@ async def stop(message: types.Message):
         await bot.send_message(user_id, text)
 
 
-async def get_strip():
+@dp.message_handler(content_types=['text'], text='update')
+async def force_update(message: types.Message):
+    user_id = message.from_user.id
+    if message.from_user.id == ADMIN:
+        log.info('Forcing update...')
+        await get_strip(force=True)
+    else:
+        log.info(f'Unauthorised update by {user_id}')
+
+
+async def get_strip(force: bool = False):
     """Checks if there is a new comic"""
     try:
         log.info("Parsing...")
         src, text, alt, name = get_comic()
     except UpdateException as err:
         today = datetime.now()
-        if today.weekday() <= 2:
+        if today.weekday() <= 2 and not force:
             retry = today + timedelta(hours=12)
             scheduler.add_job(get_strip, "date", run_date=retry)
+            log.info(f'Retry at {retry}')
         log.info(err)
     else:
         log.info(f'Got new comic "{name}"')

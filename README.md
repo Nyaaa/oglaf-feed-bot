@@ -8,4 +8,5 @@ Checks for updates on oglaf.com (weekly) and broadcasts new strips to subscriber
 
 ## Running:
 - Telegram token is passed as an environment variable BOT_TOKEN
+- Admin user ID is passed as an environment variable ADMIN
 - If running in Docker, pass your local timezone to the container using TZ environment variable
