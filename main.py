@@ -48,8 +48,10 @@ async def get_strip():
         log.info("Parsing...")
         src, text, alt, name = get_comic()
     except UpdateException as err:
-        retry = datetime.now() + timedelta(hours=12)
-        scheduler.add_job(get_strip, "date", run_date=retry)
+        today = datetime.now()
+        if today.weekday() <= 2:
+            retry = today + timedelta(hours=12)
+            scheduler.add_job(get_strip, "date", run_date=retry)
         log.info(err)
     else:
         log.info(f'Got new comic "{name}"')
