@@ -21,6 +21,14 @@ class BotException(Exception):
     pass
 
 
+class UserException(BotException):
+    """Raise when a user repeats an action."""
+
+
+class UpdateException(BotException):
+    """Raise when an expected update is not fetched."""
+
+
 class Users:
     def __init__(self, user_id):
         self.id = user_id
@@ -30,13 +38,13 @@ class Users:
             try:
                 cur.execute("INSERT INTO users(user_id) VALUES(?)", (self.id, ))
             except sqlite3.IntegrityError:
-                raise BotException(f"ID {self.id}: you are already subscribed")
+                raise UserException(f"ID {self.id}: you are already subscribed")
 
     def delete(self):
         with DBopen() as cur:
             cur.execute("DELETE FROM users WHERE user_id = ?", (self.id, ))
             if cur.rowcount <= 0:
-                raise BotException(f"ID {self.id}: you are not subscribed")
+                raise UserException(f"ID {self.id}: you are not subscribed")
 
     @staticmethod
     def get_users():
@@ -49,10 +57,10 @@ def get_comic():
     page = update()
 
     with DBopen() as cur:
-        res = cur.execute("SELECT value FROM conf")
+        res = cur.execute("SELECT value FROM conf WHERE setting = 'last_page'")
         last_page = res.fetchone()[0]
         if page == last_page:
-            raise BotException('No updates')
+            raise UpdateException('No updates')
         else:
             cur.execute("UPDATE conf SET value = ? WHERE setting = 'last_page'", (page, ))
             src, title, alt, name = download(page)

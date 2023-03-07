@@ -1,10 +1,15 @@
 from aiogram import Bot, Dispatcher, executor, types, exceptions
-import aioschedule
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 import asyncio
 import logging
 import os
-from extensions import Users, get_comic, BotException, create_db
+from extensions import Users, get_comic, UserException, UpdateException, create_db
+from dotenv import load_dotenv, find_dotenv
+from datetime import datetime, timedelta
 
+
+load_dotenv(find_dotenv())
+scheduler = AsyncIOScheduler()
 bot = Bot(token=os.getenv('BOT_TOKEN'))
 dp = Dispatcher(bot)
 logging.basicConfig(level=logging.INFO)
@@ -17,7 +22,7 @@ async def begin(message: types.Message):
     text = f"ID {user_id}: subscribed"
     try:
         Users(user_id).add()
-    except BotException as e:
+    except UserException as e:
         text = str(e)
     finally:
         log.info(text)
@@ -30,7 +35,7 @@ async def stop(message: types.Message):
     text = f"ID {user_id}: unsubscribed"
     try:
         Users(user_id).delete()
-    except BotException as e:
+    except UserException as e:
         text = str(e)
     finally:
         log.info(text)
@@ -42,7 +47,9 @@ async def get_strip():
     try:
         log.info("Parsing...")
         src, text, alt, name = get_comic()
-    except BotException as err:
+    except UpdateException as err:
+        retry = datetime.now() + timedelta(hours=12)
+        scheduler.add_job(get_strip, "date", run_date=retry)
         log.info(err)
     else:
         log.info(f'Got new comic "{name}"')
@@ -86,19 +93,12 @@ async def broadcast(name, media):
     return count
 
 
-async def scheduler():
-    aioschedule.every().sunday.at("20:00").do(get_strip)
-    # aioschedule.every(1).minutes.do(get_strip)
-    while True:
-        await aioschedule.run_pending()
-        await asyncio.sleep(1)
-
-
 async def on_startup(_):
-    asyncio.create_task(scheduler())
-
+    scheduler.add_job(get_strip, "cron", day_of_week='sun', hour=20, minute=00)
+    # scheduler.add_job(get_strip, "interval", seconds=60)
 
 if __name__ == '__main__':
     os.path.isdir('db') or os.makedirs('db')
     create_db()
+    scheduler.start()
     executor.start_polling(dp, skip_updates=True, on_startup=on_startup)
