@@ -60,9 +60,9 @@ async def get_strip(force: bool = False):
         src, text, alt, name = get_comic()
     except UpdateException as err:
         today = datetime.now()
-        if today.weekday() <= 2 and not force:
-            retry = today + timedelta(hours=12)
-            scheduler.add_job(get_strip, "date", run_date=retry)
+        if (today.weekday() <= 2 or today.weekday() >= 5) and not force:
+            retry = today + timedelta(hours=6)
+            scheduler.add_job(get_strip, 'date', run_date=retry)
             log.info(f'Retry at {retry}')
         log.info(err)
     else:
@@ -108,7 +108,7 @@ async def broadcast(name, media):
 
 
 async def on_startup(_):
-    scheduler.add_job(get_strip, "cron", day_of_week='sun', hour=20, minute=00)
+    scheduler.add_job(get_strip, "cron", day_of_week='sun', hour=21, minute=00)
     # scheduler.add_job(get_strip, "interval", seconds=60)
 
 if __name__ == '__main__':
