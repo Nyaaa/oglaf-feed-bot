@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 
 
 load_dotenv(find_dotenv())
-scheduler = AsyncIOScheduler()
+scheduler = AsyncIOScheduler(job_defaults={'misfire_grace_time': None})
 bot = Bot(token=os.getenv('BOT_TOKEN'))
 ADMIN = int(os.getenv('ADMIN'))
 dp = Dispatcher(bot)
@@ -46,7 +46,7 @@ async def stop(message: types.Message):
 @dp.message_handler(content_types=['text'], text='update')
 async def force_update(message: types.Message):
     user_id = message.from_user.id
-    if message.from_user.id == ADMIN:
+    if user_id == ADMIN:
         log.info('Forcing update...')
         await get_strip(force=True)
     else:
