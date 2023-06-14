@@ -26,4 +26,4 @@ jobs:
           context: .
           platforms: linux/arm/v6
           push: ${{ github.event_name != 'pull_request' }}
-          tags: ghcr.io/Nyaaa/oglaf-bot:latest
+          tags: ghcr.io/nyaaa/oglaf-bot:latest
