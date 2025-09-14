@@ -1,8 +1,9 @@
-FROM python:3.9-alpine
-COPY pip.conf /etc/pip.conf
-RUN mkdir /app
+FROM ghcr.io/astral-sh/uv:python3.13-alpine
+
 WORKDIR /app
-COPY requirements.txt /app/requirements.txt
-RUN pip install -r requirements.txt --no-cache-dir
-COPY extensions.py main.py ./
-CMD ["python","-u","./main.py"]
+
+COPY pyproject.toml uv.lock /app/
+RUN uv sync --locked --no-cache --no-dev
+
+COPY extensions.py main.py settings.py .env ./
+CMD ["uv","run","./main.py"]
