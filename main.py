@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher, F
 from aiogram.exceptions import (
     TelegramNotFound,
     TelegramRetryAfter,
-    TelegramUnauthorizedError,
+    TelegramUnauthorizedError, TelegramForbiddenError,
 )
 from aiogram.filters import Command
 from aiogram.types import BotCommand, InputMediaPhoto, Message
@@ -80,7 +80,7 @@ async def send_comic(user_id: int, name: str, media: list[InputMediaPhoto]) -> b
         await bot.send_chat_action(user_id, "upload_photo")
         await bot.send_message(user_id, name)
         await bot.send_media_group(user_id, media=media)
-    except (TelegramUnauthorizedError, TelegramNotFound):
+    except (TelegramUnauthorizedError, TelegramForbiddenError, TelegramNotFound):
         Users(user_id).delete()
         log.info(f"ID {user_id}: User removed")
     except TelegramRetryAfter as e:
